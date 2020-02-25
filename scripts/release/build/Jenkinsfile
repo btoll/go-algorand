@@ -9,10 +9,10 @@ pipeline {
     }
 
     agent {
-		dockerfile {
-			filename  'scripts/release/common/docker/setup.Dockerfile'
+        dockerfile {
+            filename  'scripts/release/common/docker/setup.Dockerfile'
             args '-u root'
-		}
+        }
     }
 
     /*
