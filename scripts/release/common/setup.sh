@@ -22,7 +22,7 @@ sudo apt-get update
 sudo apt-get upgrade -y
 
 sudo apt-get update
-sudo apt-get upgrade -y
+#sudo apt-get upgrade -y
 
 sudo apt-get install -y build-essential automake autoconf awscli docker.io git gpg nfs-common python python3 rpm sqlite3 python3-boto3 g++ libtool rng-tools
 sudo rngd -r /dev/urandom
