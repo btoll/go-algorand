@@ -14,8 +14,7 @@ pipeline {
 
     agent {
         dockerfile {
-            filename  'scripts/release/common/docker/setup.Dockerfile'
-            /* https://issues.jenkins-ci.org/browse/JENKINS-47026 */
+            filename 'scripts/release/common/docker/setup.Dockerfile'
             args '-u root'
         }
     }
