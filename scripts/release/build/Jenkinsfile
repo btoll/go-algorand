@@ -4,7 +4,7 @@ def TYPE = "t2.2xlarge"
 
 pipeline {
     parameters {
-        string defaultValue: 'master', description: 'derp', name: 'branch', trim: true
+        string defaultValue: 'master', description: 'Branch name or tag name.', name: 'branch', trim: true
     }
 
     environment {
@@ -57,6 +57,12 @@ pipeline {
             steps {
                 input "Forward gpg-agent"
                 sh script: "scripts/release/build/stage/sign/run.sh"
+            }
+        }
+
+        stage("verify signatures") {
+            steps {
+                sh script: "scripts/release/build/stage/verify/run.sh"
             }
         }
 
