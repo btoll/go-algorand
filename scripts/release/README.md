@@ -3,9 +3,11 @@
 The `release/` directory will have a structure that looks like the following:
 
         release/
+            archive/
             build/
-            test/
             prod/
+            test/
+            util/
             ...
             common/
                 # scripts common to all builds {.sh,.md,Dockerfile,etc}
