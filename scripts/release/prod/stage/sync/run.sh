@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# shellcheck disable=2029
 
 set -ex
 
@@ -10,7 +9,7 @@ STAGING="$1"
 PROD="$2"
 RSTAMP=$(scripts/release/prod/reverse_hex_timestamp)
 
-BUILD_ENV=$(ssh -i ReleaseBuildInstanceKey.pem -o -A ubuntu@"$INSTANCE" cat build_env)
+BUILD_ENV=$(ssh -i ReleaseBuildInstanceKey.pem ubuntu@"$INSTANCE" cat build_env)
 CHANNEL=$(sed -n 's/.*CHANNEL=\(.*\)/\1/p' <<< "$BUILD_ENV")
 RELEASE=$(sed -n 's/.*FULLVERSION=\(.*\)/\1/p' <<< "$BUILD_ENV")
 
