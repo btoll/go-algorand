@@ -8,6 +8,9 @@ SRCPATH     := $(shell pwd)
 ARCH        := $(shell ./scripts/archtype.sh)
 OS_TYPE     := $(shell ./scripts/ostype.sh)
 
+OPERATING_SYSTEMS = linux darwin
+OS_ARCHITECTURES = amd64 arm64 arm
+
 # If build number already set, use it - to ensure same build number across multiple platforms being built
 BUILDNUMBER      ?= $(shell ./scripts/compute_build_number.sh)
 COMMITHASH       := $(shell ./scripts/compute_build_commit.sh)
@@ -280,3 +283,9 @@ ci-deps:
 ci-build: buildsrc gen
 	mkdir -p $(SRCPATH)/tmp/node_pkgs/$(OS_TYPE)/$(ARCH) && \
 	PKG_ROOT=$(SRCPATH)/tmp/node_pkgs/$(OS_TYPE)/$(ARCH) NO_BUILD=True VARIATIONS=$(OS_TYPE)/$(ARCH) scripts/build_packages.sh $(OS_TYPE)/$(ARCH)
+
+package-$(OS_TYPE)-$(ARCH):
+	echo TODO
+
+package: package-$(findstring $(OS_TYPE), $(OPERATING_SYSTEMS))-$(findstring $(ARCH), $(OS_ARCHITECTURES))
+
