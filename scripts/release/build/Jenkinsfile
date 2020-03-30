@@ -38,6 +38,7 @@ pipeline {
             }
         }
 
+        /*
         stage("setup") {
             steps {
                 sh script: "scripts/release/build/stage/setup/run.sh ${env.GIT_BRANCH}"
@@ -46,13 +47,18 @@ pipeline {
                 */
             }
         }
+        */
 
         stage("build") {
             steps {
+                /*
                 sh script: "scripts/release/build/stage/build/run.sh"
+                */
+                sh "mule -f package.yaml build"
             }
         }
 
+        /*
         stage("package") {
             steps {
                 sh script: "scripts/release/build/stage/package/run.sh"
@@ -82,6 +88,7 @@ pipeline {
                 }
             }
         }
+        */
 
         stage("delete ec2 instance") {
             steps {
@@ -89,6 +96,7 @@ pipeline {
             }
         }
 
+        /*
         stage("trigger test job") {
             steps {
                 build job: 'test-packages',
@@ -100,6 +108,7 @@ pipeline {
                 ]
             }
         }
+        */
     }
 }
 

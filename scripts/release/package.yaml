@@ -1,0 +1,14 @@
+tasks:
+- task: shell.Make
+  name: setup
+  target: setup
+- task: shell.Make
+  name: package
+  target: package
+
+jobs:
+  build:
+    tasks:
+    -  shell.Make.setup
+    -  shell.Make.package
+
