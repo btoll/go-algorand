@@ -52,7 +52,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Install latest go.1.12.9.
 cd "${HOME}"
-if ! git clone --single-branch --branch improve_dockerfile2 https://github.com/btoll/go-algorand ben-branch
+if ! git clone --single-branch --branch build_packages https://github.com/btoll/go-algorand ben-branch
 then
     echo There has been a problem cloning the "$BRANCH" branch.
     exit 1
