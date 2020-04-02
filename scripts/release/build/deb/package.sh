@@ -14,33 +14,18 @@ export GOPATH="${HOME}"/go
 export PATH="${GOPATH}":/usr/local/go/bin:"${PATH}"
 
 pushd "${REPO_ROOT}"
-if [ "${CHANNEL}" = "" ]
-then
-    if [ "${BRANCH}" = "" ]
-    then
-        BRANCH=$(./scripts/compute_branch.sh)
-        export BRANCH
-    fi
-    CHANNEL=$(./scripts/compute_branch_channel.sh "${BRANCH}")
-    export CHANNEL
-fi
-
 ./scripts/build_packages.sh "${PLATFORM}"
 
 DEBTMP=$(mktemp -d 2>/dev/null || mktemp -d -t "debtmp")
 trap "rm -rf ${DEBTMP}" 0
 
-PLATFORM_SPLIT=(${PLATFORM//\// })
-OS=${PLATFORM_SPLIT[0]}
-ARCH=${PLATFORM_SPLIT[1]}
-PKG_NAME=${OS}-${ARCH}
-if ! ./scripts/build_deb.sh "${ARCH}" "${DEBTMP}" "${CHANNEL}"
+if ! ./scripts/build_deb.sh "${ARCH}" "${DEBTMP}"
 then
     echo "Error building debian package for ${PLATFORM}.  Aborting..."
     exit 1
 fi
 
-cp -p "${DEBTMP}/*.deb" "${PKG_ROOT}/algorand_${CHANNEL}_${PKG_NAME}_${FULLVERSION}.deb"
+cp -p "${DEBTMP}"/*.deb "${PKG_ROOT}/algorand_${CHANNEL}_${PKG_NAME}_${FULLVERSION}.deb"
 popd
 
 # build docker release package
