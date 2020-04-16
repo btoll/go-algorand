@@ -6,7 +6,6 @@ AWS_AMI="$2"
 AWS_INSTANCE_TYPE="$3"
 INSTANCE_NUMBER=$RANDOM
 KEY_NAME=algorand_baseline
-#KEY_NAME_FILE=algorand_baseline.pem
 SECURITY_GROUP_NAME="ReleaseBuildMachineSSH_$INSTANCE_NUMBER"
 CIDR="0.0.0.0/0"
 RED_FG=$(echo -en "\e[31m")
@@ -94,22 +93,4 @@ INSTANCE_NAME=$(< "$REPO_ROOT"/tmp/instance2.json jq -r '.Reservations[].Instanc
 echo "$GREEN_FG[$0]$END_FG_COLOR: Instance name = $INSTANCE_NAME"
 
 manage_instance_info
-
-#echo "$YELLOW_FG[$0]$END_FG_COLOR: Waiting for SSH connection"
-#end=$((SECONDS+90))
-#while [ $SECONDS -lt $end ]
-#do
-#    if ssh -i "$KEY_NAME_FILE" -o "StrictHostKeyChecking no" "ubuntu@$INSTANCE_NAME" "uname"
-#    then
-#        echo "$GREEN_FG[$0]$END_FG_COLOR: SSH connection ready"
-#        exit 0
-#    fi
-#
-#    sleep 1s
-#done
-#
-#echo "$RED_FG[$0]$END_FG_COLOR: Unable to establish SSH connection"
-
-#cleanup
-#exit 1
 

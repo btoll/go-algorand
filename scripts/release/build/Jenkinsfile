@@ -32,15 +32,27 @@ pipeline {
             }
         }
 
+    stages {
         stage("setup") {
             steps {
                 sh script: "scripts/release/build/stage/setup/run.sh ${env.GIT_BRANCH}"
-                /*
-                sh script: "scripts/release/build/stage/setup/run.sh ${params.branch}"
-                */
+
+                script {
+                    /*
+                    withCredentials([file(credentialsId: "jenkins-key-file", variable: "FILE")]) {
+                    */
+                    withCredentials([sshUserPrivateKey(credentialsId: "algorand_baseline", keyFileVariable: "KEYFILE")]) {
+                        BRANCH=$(./scripts/release/util/check_remote.sh "$1")
+                        INSTANCE=$(cat ./scripts/release/common/ec2/tmp/instance)
+
+                        scp -i ${KEYFILE} -o StrictHostKeyChecking=no -r scripts/release/common/setup.sh gnupg2.2.9_centos7_amd64.tar.bz2 ubuntu@"$INSTANCE":
+                        ssh -i ${KEYFILE} -A ubuntu@"$INSTANCE" bash setup.sh "$BRANCH"
+                    }
+                }
             }
         }
 
+        /*
         stage("build") {
             steps {
                 sh script: "scripts/release/build/stage/build/run.sh"
@@ -77,12 +89,14 @@ pipeline {
             }
         }
 
+        */
         stage("delete ec2 instance") {
             steps {
                 sh script: "scripts/release/common/delete.sh ${REGION}"
             }
         }
 
+        /*
         stage("trigger test job") {
             steps {
                 build job: 'test-packages',
@@ -94,6 +108,7 @@ pipeline {
                 ]
             }
         }
+        */
     }
 }
 
