@@ -28,12 +28,6 @@ cat <<EOF>"${HOME}"/.aptly.conf
       "bucket":"algorand-releases",
       "acl":"public-read",
       "prefix":"deb"
-    },
-    "algorand-dev-deb-repo": {
-      "region":"us-east-1",
-      "bucket":"algorand-dev-deb-repo",
-      "acl":"public-read",
-      "prefix":"deb"
     }
   },
   "SwiftPublishEndpoints": {}
