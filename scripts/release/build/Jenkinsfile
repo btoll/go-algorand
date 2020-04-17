@@ -2,6 +2,8 @@ def REGION = "us-west-1"
 def AMI = "ami-0dd655843c87b6930"
 def TYPE = "t2.2xlarge"
 
+def BRANCH = ""
+
 pipeline {
     /*
     parameters {
@@ -25,6 +27,9 @@ pipeline {
     }
     */
 
+                    /*
+                    withCredentials([file(credentialsId: "jenkins-key-file", variable: "FILE")]) {
+                    */
     stages {
         stage("create ec2 instance") {
             steps {
@@ -35,18 +40,15 @@ pipeline {
     stages {
         stage("setup") {
             steps {
-                sh script: "scripts/release/build/stage/setup/run.sh ${env.GIT_BRANCH}"
+                sh script: "scripts/release/build/stage/setup/run.sh"
 
                 script {
-                    /*
-                    withCredentials([file(credentialsId: "jenkins-key-file", variable: "FILE")]) {
-                    */
-                    withCredentials([sshUserPrivateKey(credentialsId: "algorand_baseline", keyFileVariable: "KEYFILE")]) {
-                        BRANCH=$(./scripts/release/util/check_remote.sh "$1")
-                        INSTANCE=$(cat ./scripts/release/common/ec2/tmp/instance)
+                    BRANCH = sh(returnStdout: true, script: "./scripts/release/util/check_remote.sh ${env.GIT_BRANCH}")
+                    INSTANCE = sh(returnStdout: true, script: "./scripts/release/common/ec2/tmp/instance")
 
-                        scp -i ${KEYFILE} -o StrictHostKeyChecking=no -r scripts/release/common/setup.sh gnupg2.2.9_centos7_amd64.tar.bz2 ubuntu@"$INSTANCE":
-                        ssh -i ${KEYFILE} -A ubuntu@"$INSTANCE" bash setup.sh "$BRANCH"
+                    withCredentials([sshUserPrivateKey(credentialsId: "algorand_baseline", keyFileVariable: "KEYFILE")]) {
+                        sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no -r scripts/release/common/setup.sh gnupg2.2.9_centos7_amd64.tar.bz2 ubuntu@$INSTANCE":
+                        sh "ssh -i ${KEYFILE} -A ubuntu@${INSTANCE} bash setup.sh ${BRANCH}"
                     }
                 }
             }
@@ -82,14 +84,11 @@ pipeline {
             steps {
                 script {
                     sh script: "scripts/release/build/stage/upload/run.sh ${env.GIT_BRANCH}"
-                    /*
-                    sh script: "scripts/release/build/stage/upload/run.sh ${params.branch}"
-                    */
                 }
             }
         }
-
         */
+
         stage("delete ec2 instance") {
             steps {
                 sh script: "scripts/release/common/delete.sh ${REGION}"
@@ -102,9 +101,6 @@ pipeline {
                 build job: 'test-packages',
                 parameters: [
                     string(name: 'branch', value: env.GIT_BRANCH)
-                    /*
-                    string(name: 'branch', value: params.branch)
-                    */
                 ]
             }
         }
