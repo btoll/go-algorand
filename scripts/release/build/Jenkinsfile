@@ -5,12 +5,6 @@ def TYPE = "t2.2xlarge"
 def BRANCH = ""
 
 pipeline {
-    /*
-    parameters {
-        string defaultValue: 'rel/stable', description: 'Branch name or tag name.', name: 'branch', trim: true
-    }
-    */
-
     environment {
         AWS_ACCESS_KEY_ID = credentials("prod-s3-aws-access-key-id")
         AWS_SECRET_ACCESS_KEY = credentials("prod-s3-aws-secret-access-key")
@@ -18,18 +12,6 @@ pipeline {
 
     agent any
 
-    /*
-    agent {
-        dockerfile {
-            filename 'scripts/release/common/docker/setup.Dockerfile'
-            args '-u root'
-        }
-    }
-    */
-
-                    /*
-                    withCredentials([file(credentialsId: "jenkins-key-file", variable: "FILE")]) {
-                    */
     stages {
         stage("create ec2 instance") {
             steps {
@@ -37,7 +19,6 @@ pipeline {
             }
         }
 
-    stages {
         stage("setup") {
             steps {
                 sh script: "scripts/release/build/stage/setup/run.sh"
@@ -46,7 +27,7 @@ pipeline {
                     BRANCH = sh(returnStdout: true, script: "./scripts/release/util/check_remote.sh ${env.GIT_BRANCH}")
                     INSTANCE = sh(returnStdout: true, script: "./scripts/release/common/ec2/tmp/instance")
 
-                    withCredentials([sshUserPrivateKey(credentialsId: "algorand_baseline", keyFileVariable: "KEYFILE")]) {
+                    withCredentials([file(credentialsId: "algorand_baseline_key", variable: "KEYFILE")]) {
                         sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no -r scripts/release/common/setup.sh gnupg2.2.9_centos7_amd64.tar.bz2 ubuntu@$INSTANCE":
                         sh "ssh -i ${KEYFILE} -A ubuntu@${INSTANCE} bash setup.sh ${BRANCH}"
                     }
@@ -54,57 +35,11 @@ pipeline {
             }
         }
 
-        /*
-        stage("build") {
-            steps {
-                sh script: "scripts/release/build/stage/build/run.sh"
-            }
-        }
-
-        stage("package") {
-            steps {
-                sh script: "scripts/release/build/stage/package/run.sh"
-            }
-        }
-
-        stage("sign") {
-            steps {
-                input "Forward gpg-agent"
-                sh script: "scripts/release/build/stage/sign/run.sh"
-            }
-        }
-
-        stage("verify signatures") {
-            steps {
-                sh script: "scripts/release/build/stage/verify/run.sh"
-            }
-        }
-
-        stage("upload") {
-            steps {
-                script {
-                    sh script: "scripts/release/build/stage/upload/run.sh ${env.GIT_BRANCH}"
-                }
-            }
-        }
-        */
-
         stage("delete ec2 instance") {
             steps {
                 sh script: "scripts/release/common/delete.sh ${REGION}"
             }
         }
-
-        /*
-        stage("trigger test job") {
-            steps {
-                build job: 'test-packages',
-                parameters: [
-                    string(name: 'branch', value: env.GIT_BRANCH)
-                ]
-            }
-        }
-        */
     }
 }
 
