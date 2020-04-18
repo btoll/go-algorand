@@ -89,6 +89,7 @@ do
 done
 
 aws ec2 describe-instances --region "$AWS_REGION" --instance-id "$INSTANCE_ID" > "$REPO_ROOT"/tmp/instance2.json
+
 INSTANCE_NAME=$(< "$REPO_ROOT"/tmp/instance2.json jq -r '.Reservations[].Instances[].PublicDnsName')
 echo "$GREEN_FG[$0]$END_FG_COLOR: Instance name = $INSTANCE_NAME"
 

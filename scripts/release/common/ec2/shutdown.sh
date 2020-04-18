@@ -10,7 +10,6 @@ REPO_ROOT="$( cd "$(dirname "$0")" ; pwd -P )"
 pushd "$REPO_ROOT"/tmp > /dev/null
 SGID=$(cat sgid)
 INSTANCE_ID=$(cat instance-id)
-KEY_NAME=$(cat key-name)
 popd > /dev/null
 
 echo "$YELLOW_FG[$0]$END_FG_COLOR: Waiting for instance to terminate."
@@ -37,15 +36,8 @@ do
     sleep 5s
 done
 
-if [ "$KEY_NAME" != "" ]
-then
-    aws ec2 delete-key-pair --key-name "$KEY_NAME" --region "$AWS_REGION"
-fi
-
 if [ "$SGID" != "" ]
 then
     aws ec2 delete-security-group --group-id "$SGID" --region "$AWS_REGION"
 fi
-
-rm -rf BuilderInstanceKey.pem "$REPO_ROOT"/tmp
 

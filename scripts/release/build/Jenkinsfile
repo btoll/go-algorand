@@ -3,6 +3,7 @@ def AMI = "ami-0dd655843c87b6930"
 def TYPE = "t2.2xlarge"
 
 def BRANCH = ""
+def INSTANCE = ""
 
 pipeline {
     environment {
@@ -21,15 +22,18 @@ pipeline {
 
         stage("setup") {
             steps {
-                sh script: "scripts/release/build/stage/setup/run.sh"
+                sh "aws s3 cp s3://algorand-devops-misc/tools/gnupg2.2.9_centos7_amd64.tar.bz2 ."
 
                 script {
                     BRANCH = sh(returnStdout: true, script: "./scripts/release/util/check_remote.sh ${env.GIT_BRANCH}")
-                    INSTANCE = sh(returnStdout: true, script: "./scripts/release/common/ec2/tmp/instance")
+                    INSTANCE = sh(returnStdout: true, script: "cat ./scripts/release/common/ec2/tmp/instance")
 
                     withCredentials([file(credentialsId: "algorand_baseline_key", variable: "KEYFILE")]) {
-                        sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no -r scripts/release/common/setup.sh gnupg2.2.9_centos7_amd64.tar.bz2 ubuntu@$INSTANCE":
-                        sh "ssh -i ${KEYFILE} -A ubuntu@${INSTANCE} bash setup.sh ${BRANCH}"
+                        sh "sleep 25 ; ssh -i ${KEYFILE} -A -o StrictHostKeyChecking=no ubuntu@${INSTANCE} uname"
+                        sh "pwd"
+                        sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no gnupg2.2.9_centos7_amd64.tar.bz2 ubuntu@${INSTANCE}:"
+                        sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no scripts/release/common/setup.sh ubuntu@${INSTANCE}:"
+                        sh "ssh -i ${KEYFILE} -A -o StrictHostKeyChecking=no ubuntu@${INSTANCE} bash setup.sh ${BRANCH}"
                     }
                 }
             }
