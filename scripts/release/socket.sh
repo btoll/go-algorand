@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
 
-# TODO: ssh-keyscan?
-# -o StrictHostKeyChecking=no suppresses the (yes/no) new key ssh question.
-# This lessens the security, but it may be acceptable in this case.
-
-if [ -z "$1" ]
+if [ -z "$KEYFILE" ] || [ -z "$JENKINS" ]
 then
-    echo Missing \`instance\` variable.
+    echo Missing KEYFILE or JENKINS environment variables.
     exit 1
 fi
 
-INSTANCE=$1
+INSTANCE=$(ssh -i "$KEYFILE" "$JENKINS" sudo cat /opt/jenkins/workspace/build-packages/scripts/release/common/ec2/tmp/instance)
 gpgp=$(find /usr/lib/gnupg{2,,1} -type f -name gpg-preset-passphrase 2> /dev/null)
 
 # Here we need to grab the signing subkey, hence `tail -1`.

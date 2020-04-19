@@ -22,18 +22,25 @@ pipeline {
 
         stage("setup") {
             steps {
+                /*
                 sh "aws s3 cp s3://algorand-devops-misc/tools/gnupg2.2.9_centos7_amd64.tar.bz2 ."
+                ec2-18-144-16-11.us-west-1.compute.amazonaws.com
+                */
 
                 script {
                     BRANCH = sh(returnStdout: true, script: "./scripts/release/util/check_remote.sh ${env.GIT_BRANCH}")
                     INSTANCE = sh(returnStdout: true, script: "cat ./scripts/release/common/ec2/tmp/instance")
 
                     withCredentials([file(credentialsId: "algorand_baseline_key", variable: "KEYFILE")]) {
-                        sh "sleep 25 ; ssh -i ${KEYFILE} -A -o StrictHostKeyChecking=no ubuntu@${INSTANCE} uname"
+                        sh "echo $INSTANCE"
+                        sh 'ssh -i $KEYFILE -A -o StrictHostKeyChecking=no ubuntu@' + \${INSTANCE} + ' ls -l'
+                        /*
+                        sh "sleep 20 ; ssh -i ${KEYFILE} -A -o StrictHostKeyChecking=no ubuntu@${INSTANCE} uname"
                         sh "pwd"
                         sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no gnupg2.2.9_centos7_amd64.tar.bz2 ubuntu@${INSTANCE}:"
                         sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no scripts/release/common/setup.sh ubuntu@${INSTANCE}:"
                         sh "ssh -i ${KEYFILE} -A -o StrictHostKeyChecking=no ubuntu@${INSTANCE} bash setup.sh ${BRANCH}"
+                        */
                     }
                 }
             }
