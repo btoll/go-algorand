@@ -52,14 +52,6 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Install latest go.1.12.9.
 cd "${HOME}"
-if ! git clone --single-branch --branch build_packages https://github.com/btoll/go-algorand ben-branch
-then
-    echo There has been a problem cloning the "$BRANCH" branch.
-    exit 1
-fi
-
-# Install latest go.1.12.9.
-cd "${HOME}"
 if ! curl -O https://dl.google.com/go/go1.12.9.linux-amd64.tar.gz
 then
     echo Golang could not be installed!
@@ -142,7 +134,7 @@ PLATFORM_SPLIT=(${PLATFORM//\// })
 #export CHANNEL=$("${GOPATH}"/src/github.com/algorand/go-algorand/scripts/compute_branch_channel.sh "${BRANCH}")
 cat << EOF > "${HOME}"/build_env
 export BRANCH=${BRANCH}
-export CHANNEL=$("${HOME}"/ben-branch/scripts/compute_branch_channel.sh "${BRANCH}")
+export CHANNEL=$("${HOME}"/scripts/compute_branch_channel.sh "${BRANCH}")
 export COMMIT_HASH=${COMMIT_HASH}
 export DEFAULTNETWORK=$(PATH=${PATH} "${REPO_ROOT}"/scripts/compute_branch_network.sh)
 export DC_IP=$(curl --silent http://169.254.169.254/latest/meta-data/local-ipv4)

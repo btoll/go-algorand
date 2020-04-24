@@ -2,16 +2,22 @@ def REGION = "us-west-1"
 def AMI = "ami-0dd655843c87b6930"
 def TYPE = "t2.2xlarge"
 
-def BRANCH = ""
-def INSTANCE = ""
-
 pipeline {
+    parameters {
+        string defaultValue: 'rel/stable', description: 'Branch name or tag name.', name: 'branch', trim: true
+    }
+
     environment {
         AWS_ACCESS_KEY_ID = credentials("prod-s3-aws-access-key-id")
         AWS_SECRET_ACCESS_KEY = credentials("prod-s3-aws-secret-access-key")
     }
 
-    agent any
+    agent {
+        dockerfile {
+            filename 'scripts/release/common/docker/setup.Dockerfile'
+            args '-u root'
+        }
+    }
 
     stages {
         stage("create ec2 instance") {
@@ -23,25 +29,44 @@ pipeline {
         stage("setup") {
             steps {
                 /*
-                sh "aws s3 cp s3://algorand-devops-misc/tools/gnupg2.2.9_centos7_amd64.tar.bz2 ."
-                ec2-18-144-16-11.us-west-1.compute.amazonaws.com
+                sh script: "scripts/release/build/stage/setup/run.sh ${env.GIT_BRANCH}"
                 */
+                sh script: "scripts/release/build/stage/setup/run.sh ${params.branch}"
+            }
+        }
 
+        stage("build") {
+            steps {
+                sh script: "scripts/release/build/stage/build/run.sh"
+            }
+        }
+
+        stage("package") {
+            steps {
+                sh script: "scripts/release/build/stage/package/run.sh"
+            }
+        }
+
+        stage("sign") {
+            steps {
+                input "Forward gpg-agent"
+                sh script: "scripts/release/build/stage/sign/run.sh"
+            }
+        }
+
+        stage("verify signatures") {
+            steps {
+                sh script: "scripts/release/build/stage/verify/run.sh"
+            }
+        }
+
+        stage("upload") {
+            steps {
                 script {
-                    BRANCH = sh(returnStdout: true, script: "./scripts/release/util/check_remote.sh ${env.GIT_BRANCH}")
-                    INSTANCE = sh(returnStdout: true, script: "cat ./scripts/release/common/ec2/tmp/instance")
-
-                    withCredentials([file(credentialsId: "algorand_baseline_key", variable: "KEYFILE")]) {
-                        sh "echo $INSTANCE"
-                        sh 'ssh -i $KEYFILE -A -o StrictHostKeyChecking=no ubuntu@' + \${INSTANCE} + ' ls -l'
-                        /*
-                        sh "sleep 20 ; ssh -i ${KEYFILE} -A -o StrictHostKeyChecking=no ubuntu@${INSTANCE} uname"
-                        sh "pwd"
-                        sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no gnupg2.2.9_centos7_amd64.tar.bz2 ubuntu@${INSTANCE}:"
-                        sh "scp -i ${KEYFILE} -o StrictHostKeyChecking=no scripts/release/common/setup.sh ubuntu@${INSTANCE}:"
-                        sh "ssh -i ${KEYFILE} -A -o StrictHostKeyChecking=no ubuntu@${INSTANCE} bash setup.sh ${BRANCH}"
-                        */
-                    }
+                    /*
+                    sh script: "scripts/release/build/stage/upload/run.sh ${env.GIT_BRANCH}"
+                    */
+                    sh script: "scripts/release/build/stage/upload/run.sh ${params.branch}"
                 }
             }
         }
@@ -51,6 +76,17 @@ pipeline {
                 sh script: "scripts/release/common/delete.sh ${REGION}"
             }
         }
+
+        /*
+        stage("trigger test job") {
+            steps {
+                build job: 'test-packages',
+                parameters: [
+                    string(name: 'branch', value: env.GIT_BRANCH)
+                ]
+            }
+        }
+        */
     }
 }
 
