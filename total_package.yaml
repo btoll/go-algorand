@@ -1,0 +1,148 @@
+#!mule
+agents:
+  - name: deb
+    dockerFilePath: docker/build/cicd.ubuntu.Dockerfile
+    image: algorand/go-algorand-ci-linux-ubuntu
+    version: scripts/configure_dev-deps.sh
+    buildArgs:
+      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
+    env:
+      - NETWORK=$NETWORK
+      - VERSION=$VERSION
+    workDir: $HOME/projects/go-algorand
+
+  - name: rpm
+    dockerFilePath: docker/build/cicd.centos.Dockerfile
+    image: algorand/go-algorand-ci-linux-centos
+    version: scripts/configure_dev-deps.sh
+    buildArgs:
+      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
+    env:
+      - NETWORK=$NETWORK
+      - VERSION=$VERSION
+    workDir: $HOME/projects/go-algorand
+
+  - name: docker
+    dockerFilePath: docker/build/docker.ubuntu.Dockerfile
+    image: algorand/go-algorand-docker-linux-ubuntu
+    version: scripts/configure_dev-deps.sh
+    buildArgs:
+      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
+    env:
+      - NETWORK=$NETWORK
+      - VERSION=$VERSION
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    workDir: $HOME/projects/go-algorand
+
+  - name: sign
+    dockerFilePath: docker/build/cicd.ubuntu.Dockerfile
+    image: algorand/go-algorand-ci-linux-ubuntu
+    version: scripts/configure_dev-deps.sh
+    buildArgs:
+      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
+    env:
+      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+      - GPG_DIR=$GPG_DIR
+      - NETWORK=$NETWORK
+      - S3_SOURCE=$S3_SOURCE
+      - VERSION=$VERSION
+    volumes:
+      - $XDG_RUNTIME_DIR/gnupg/S.gpg-agent:/root/.gnupg/S.gpg-agent
+      - $HOME/.gnupg/pubring.kbx:/root/.gnupg/pubring.kbx
+    workDir: $HOME/projects/go-algorand
+
+  - name: deb-test
+    dockerFilePath: docker/build/cicd.ubuntu.Dockerfile
+    image: algorand/go-algorand-ci-linux-ubuntu
+    version: scripts/configure_dev-deps.sh
+    buildArgs:
+      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
+    env:
+      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+      - BRANCH=$BRANCH
+      - NETWORK=$NETWORK
+      - S3_SOURCE=$S3_SOURCE
+      - SHA=$SHA
+      - VERSION=$VERSION
+    workDir: $HOME/projects/go-algorand
+
+  - name: rpm-test
+    dockerFilePath: docker/build/cicd.centos.Dockerfile
+    image: algorand/mule-linux-centos
+    version: scripts/configure_dev-deps.sh
+    buildArgs:
+      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
+    env:
+      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+      - BRANCH=$BRANCH
+      - NETWORK=$NETWORK
+      - S3_SOURCE=$S3_SOURCE
+      - SHA=$SHA
+      - VERSION=$VERSION
+    workDir: $HOME/projects/go-algorand
+
+tasks:
+  - task: docker.Make
+    name: build
+    agent: deb
+    target: ci-build
+
+  - task: docker.Make
+    name: rpm
+    agent: rpm
+    target: mule-package-rpm
+
+  - task: docker.Make
+    name: deb
+    agent: deb
+    target: mule-package-deb
+
+  - task: docker.Make
+    name: docker
+    agent: docker
+    target: mule-package-docker
+
+  - task: docker.Make
+    name: package-sign
+    agent: sign
+    target: mule-sign
+
+  - task: docker.Make
+    name: package-test-deb
+    agent: deb-test
+    target: mule-test-deb
+
+  - task: docker.Make
+    name: package-test-rpm
+    agent: rpm-test
+    target: mule-test-rpm
+
+jobs:
+  package:
+    tasks:
+      - docker.Make.build
+      - docker.Make.deb
+      - docker.Make.rpm
+      - docker.Make.docker
+
+  package-sign:
+    tasks:
+      - docker.Make.package-sign
+
+#  package-test:
+#    tasks:
+#      - docker.Make.package-test-deb
+#      - docker.Make.package-test-rpm
+
+  package-test-deb:
+    tasks:
+      - docker.Make.package-test-deb
+
+  package-test-rpm:
+    tasks:
+      - docker.Make.package-test-rpm
+
