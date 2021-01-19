@@ -67,3 +67,6 @@ mule-test-%: PKG_TYPE=$*
 mule-test-%:
 	scripts/release/mule/test/test.sh $(PKG_TYPE)
 
+say:
+	@uname -a
+

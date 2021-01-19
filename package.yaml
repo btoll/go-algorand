@@ -1,25 +1,19 @@
 #!mule
 agents:
-  - name: deb-amd64
-    dockerFilePath: docker/build/cicd.ubuntu.Dockerfile
-    image: algorand/go-algorand-ci-linux-ubuntu
-    version: scripts/configure_dev-deps.sh
-    buildArgs:
-      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
-      - ARCH=amd64
+  - name: deb
+    dockerFilePath: test_arch/Dockerfile
+    image: algorand/test_arch
+    tag: latest@sha256:cfc1b6ba1a1d96138f53cac05f629c5181b5a5a600c964489eba7166841505ed
     env:
       - NETWORK=$NETWORK
       - VERSION=$VERSION
       - TRAVIS_BRANCH=$GIT_BRANCH
     workDir: $HOME/projects/go-algorand
 
-  - name: deb-arm64
-    dockerFilePath: docker/build/cicd.ubuntu.Dockerfile
-    image: algorand/go-algorand-ci-linux-ubuntu
-    version: scripts/configure_dev-deps.sh
-    buildArgs:
-      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
-      - ARCH=amd64
+  - name: deb-arm
+    dockerFilePath: test_arch/Dockerfile
+    image: algorand/test_arch
+    tag: latest@sha256:dfc039b4829cac5d7bb8c3926e8959f393d9478780e5e6269633f2bb35d9c45e
     env:
       - NETWORK=$NETWORK
       - VERSION=$VERSION
@@ -45,7 +39,7 @@ agents:
     version: scripts/configure_dev-deps.sh
     buildArgs:
       - GOLANG_VERSION=`./scripts/get_golang_version.sh`
-      - ARCH=arm64
+      - ARCH=arm64v8
     env:
       - NETWORK=$NETWORK
       - VERSION=$VERSION
@@ -81,18 +75,8 @@ agents:
 
 tasks:
   - task: docker.Make
-    name: build-amd64
-    agent: deb-amd64
-    target: ci-build
-
-  - task: docker.Make
-    name: build-arm64
-    agent: deb-arm64
-    target: ci-build
-
-  - task: docker.Make
-    name: build-arm
-    agent: alpine
+    name: build
+    agent: deb
     target: ci-build
 
   - task: docker.Make
@@ -101,14 +85,14 @@ tasks:
     target: mule-package-rpm
 
   - task: docker.Make
-    name: deb-amd64
-    agent: deb-amd64
-    target: mule-package-deb
+    name: deb
+    agent: deb
+    target: say
 
   - task: docker.Make
-    name: deb-arm64
-    agent: deb-arm64
-    target: mule-package-deb
+    name: deb-arm
+    agent: deb-arm
+    target: say
 
   - task: docker.Make
     name: rpm-arm64
@@ -132,29 +116,29 @@ tasks:
 
   - task: s3.BucketCopy
     name: arm64
-    src: ./tmp/node_pkgs/linux/arm64
+    src: $HOME/projects/go-algorand/tmp/node_pkgs/linux/arm64
     dest: s3://algorand-staging/releases/beta/2.4.0/
 
+  - task: shell.Shell
+    command: uname -a
+
 jobs:
+  package:
+    tasks:
+      - docker.Make.build
+      - docker.Make.deb
+
   package-amd64:
     tasks:
-      - docker.Make.build-amd64
-      - docker.Make.deb-amd64
-      - docker.Make.rpm-amd64
-      - docker.Make.docker
-      - s3.BucketCopy.amd64
+      - docker.Make.deb
 
   package-arm64:
     tasks:
-      - docker.Make.build-arm64
-      - docker.Make.deb-arm64
-        #      - docker.Make.rpm-arm64
-      - s3.BucketCopy.arm64
+      - docker.Make.deb-arm
 
   package-arm:
     tasks:
-      - docker.Make.build-arm
-      - docker.Make.deb-amd64
-      - docker.Make.rpm-amd64
+      - docker.Make.build
+      - docker.Make.deb
       - s3.BucketCopy.arm
 
