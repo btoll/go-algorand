@@ -57,6 +57,7 @@ then
     done
 fi
 
+mkdir -p "$PKG_DIR"
 cd "$PKG_DIR"
 
 # TODO: "$PKG_TYPE" == "source"
