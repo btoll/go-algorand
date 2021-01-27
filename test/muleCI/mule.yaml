@@ -60,6 +60,24 @@ agents:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
+  - name: signer
+    dockerFilePath: docker/build/cicd.ubuntu.Dockerfile
+    image: algorand/go-algorand-ci-linux-ubuntu
+    version: scripts/configure_dev-deps.sh
+    arch: amd64
+    buildArgs:
+      - GOLANG_VERSION=`./scripts/get_golang_version.sh`
+    env:
+      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+      - TRAVIS_BRANCH=$GIT_BRANCH
+      - NETWORK=$NETWORK
+      - S3_SOURCE=$S3_SOURCE
+      - VERSION=$VERSION
+    volumes:
+      - $XDG_RUNTIME_DIR/gnupg/S.gpg-agent:/root/.gnupg/S.gpg-agent
+      - $HOME/.gnupg/pubring.kbx:/root/.gnupg/pubring.kbx
+
 tasks:
   - task: docker.Make
     name: build.amd64
@@ -87,6 +105,11 @@ tasks:
     name: deb.amd64
     agent: cicd.ubuntu.amd64
     target: mule-package-deb
+
+  - task: docker.Make
+    name: package-sign
+    agent: signer
+    target: mule-sign
 
   # Stash tasks
   - task: stash.Stash
@@ -125,6 +148,7 @@ tasks:
       - gen/devnet/genesis.json
       - gen/testnet/genesis.json
       - gen/mainnet/genesis.json
+
   - task: stash.Stash
     name: packages
     bucketName: go-algorand-ci-cache
@@ -149,6 +173,7 @@ tasks:
     name: linux-arm
     bucketName: go-algorand-ci-cache
     stashId: ${JENKINS_JOB_CACHE_ID}/linux-arm
+
   - task: stash.Unstash
     name: packages
     bucketName: go-algorand-ci-cache
@@ -158,6 +183,11 @@ tasks:
     name: docker-image
     agent: docker-ubuntu
     target: mule-package-docker
+
+  - task: s3.BucketCopy
+    name: amd64
+    src: ./tmp/node_pkgs/linux/amd64
+    dest: s3://algorand-staging/releases/stable/2.4.1/
 
 jobs:
   build-linux-amd64:
@@ -181,11 +211,17 @@ jobs:
       - docker.Make.deb.amd64
       - docker.Make.rpm.amd64
       - stash.Stash.packages
+
   archive-linux-amd64:
     tasks:
       - stash.Unstash.packages
       - docker.Make.archive.amd64
 
-  package-docker:
+  sign-linux-amd64:
     tasks:
-      - docker.Make.docker-image
+      - docker.Make.package-sign
+      - s3.BucketCopy.amd64
+
+#  package-docker:
+#    tasks:
+#      - docker.Make.docker-image
